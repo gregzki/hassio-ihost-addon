@@ -13,49 +13,46 @@ permissions:
   contents: write
   packages: write
 
+env:
+  ADDON: hassio-ihost-zigbee2mqtt
+  ARCH: armv7
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        addon:
-          - hassio-ihost-zigbee2mqtt
     steps:
       - uses: actions/checkout@v4
 
-      - name: Determine arch
-        id: arch
-        run: |
-          ARCH_LIST=$(jq -r -c '.arch' ./${{ matrix.addon }}/config.json)
-          echo "ARCH_LIST=$ARCH_LIST" >> $GITHUB_OUTPUT
-          echo "Found arches: $ARCH_LIST"
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      - name: Set build args
-        id: args
+      - name: Determine build mode
+        id: mode
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "BUILD_ARGS=--no-cache" >> $GITHUB_OUTPUT
+            echo "push=true" >> "$GITHUB_OUTPUT"
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           else
-            echo "BUILD_ARGS=--no-latest --test" >> $GITHUB_OUTPUT
+            echo "push=false" >> "$GITHUB_OUTPUT"
+            echo "version=$(jq -r '.version' ./${{ env.ADDON }}/config.json)" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Update image owner in config.json
         run: |
-          IMAGE=$(jq -r '.image' ./${{ matrix.addon }}/config.json)
+          IMAGE=$(jq -r '.image' ./${{ env.ADDON }}/config.json)
           NEW_IMAGE=$(echo "$IMAGE" | sed "s|ghcr\.io/[^/]*/|ghcr.io/${{ github.repository_owner }}/|")
-          jq ".image = \"$NEW_IMAGE\"" ./${{ matrix.addon }}/config.json > ./${{ matrix.addon }}/config.json.tmp
-          mv ./${{ matrix.addon }}/config.json.tmp ./${{ matrix.addon }}/config.json
+          jq ".image = \"$NEW_IMAGE\"" ./${{ env.ADDON }}/config.json > ./${{ env.ADDON }}/config.json.tmp
+          mv ./${{ env.ADDON }}/config.json.tmp ./${{ env.ADDON }}/config.json
           echo "Updated image: $NEW_IMAGE"
 
       - name: Prepare addon build files
-        working-directory: ${{ matrix.addon }}
+        working-directory: ${{ env.ADDON }}
         run: |
           cp -R common/rootfs .
           cp common/Dockerfile .
-          cp common/build.yaml .
 
       - name: Log in to ghcr.io
-        if: startsWith(github.ref, 'refs/tags/')
+        if: steps.mode.outputs.push == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -63,38 +60,42 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: home-assistant/builder@2025.11.0
+        uses: docker/build-push-action@v6
         with:
-          args: |
-            --armv7 \
-            --target ${{ matrix.addon }} \
-            ${{ steps.args.outputs.BUILD_ARGS }}
+          context: ${{ env.ADDON }}
+          file: ${{ env.ADDON }}/Dockerfile
+          platforms: linux/arm/v7
+          push: ${{ steps.mode.outputs.push }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ env.ADDON }}-${{ env.ARCH }}:${{ steps.mode.outputs.version }}
+          build-args: |
+            BUILD_FROM=ghcr.io/home-assistant/${{ env.ARCH }}-base:3.24
+            BUILD_VERSION=${{ steps.mode.outputs.version }}
 
       - name: Cleanup old ghcr.io images (keep last 3)
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          PACKAGE="hassio-ihost-zigbee2mqtt-armv7"
+          PACKAGE="${{ env.ADDON }}-${{ env.ARCH }}"
           echo "Fetching versions for $PACKAGE..."
           VERSIONS=$(gh api "/users/${{ github.repository_owner }}/packages/container/$PACKAGE/versions" --paginate 2>/dev/null | jq -c '.[] | {id: .id, tags: .metadata.container.tags}' 2>/dev/null) || true
-          
+
           if [ -z "$VERSIONS" ]; then
             echo "No existing versions found (or first push)"
             exit 0
           fi
-          
+
           echo "$VERSIONS" | while read -r VERSION; do
             echo "$VERSION" >> /tmp/versions.json
           done
-          
+
           TOTAL=$(wc -l < /tmp/versions.json)
           echo "Found $TOTAL versions, keeping last 3"
-          
+
           if [ "$TOTAL" -le 3 ]; then
             echo "Nothing to clean up"
             rm -f /tmp/versions.json
             exit 0
           fi
-          
+
           head -n -3 /tmp/versions.json > /tmp/to_delete.json
           while read -r LINE; do
             ID=$(echo "$LINE" | jq -r '.id')
@@ -102,7 +103,7 @@ jobs:
             echo "Deleting version $ID (tags: $TAGS)"
             gh api -X DELETE "/users/${{ github.repository_owner }}/packages/container/$PACKAGE/versions/$ID" 2>/dev/null || true
           done < /tmp/to_delete.json
-          
+
           rm -f /tmp/versions.json /tmp/to_delete.json
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
