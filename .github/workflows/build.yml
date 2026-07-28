@@ -71,14 +71,6 @@ jobs:
             BUILD_FROM=ghcr.io/home-assistant/${{ env.ARCH }}-base:3.22
             BUILD_VERSION=${{ steps.mode.outputs.version }}
 
-      - name: Make package public
-        if: steps.mode.outputs.push == 'true'
-        run: |
-          gh api --method PATCH "/users/${{ github.repository_owner }}/packages/container/${{ env.ADDON }}-${{ env.ARCH }}/visibility" \
-            -f visibility=public
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Cleanup old ghcr.io images (keep last 3)
         if: startsWith(github.ref, 'refs/tags/')
         run: |
