@@ -68,7 +68,7 @@ jobs:
           push: ${{ steps.mode.outputs.push }}
           tags: ghcr.io/${{ github.repository_owner }}/${{ env.ADDON }}-${{ env.ARCH }}:${{ steps.mode.outputs.version }}
           build-args: |
-            BUILD_FROM=ghcr.io/home-assistant/${{ env.ARCH }}-base:3.24
+            BUILD_FROM=ghcr.io/home-assistant/${{ env.ARCH }}-base:3.22
             BUILD_VERSION=${{ steps.mode.outputs.version }}
 
       - name: Cleanup old ghcr.io images (keep last 3)
