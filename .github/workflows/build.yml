@@ -96,7 +96,7 @@ jobs:
             exit 0
           fi
 
-          head -n -3 /tmp/versions.json > /tmp/to_delete.json
+          tail -n +4 /tmp/versions.json > /tmp/to_delete.json
           while read -r LINE; do
             ID=$(echo "$LINE" | jq -r '.id')
             TAGS=$(echo "$LINE" | jq -r '.tags | join(", ")')
