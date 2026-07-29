@@ -1,4 +1,4 @@
-# Zigbee2MQTT for SONOFF iHost (armv7)
+# Addons for iHost (armv7)
 
 Allows you to use your Zigbee devices **without** the vendor's bridge or gateway.
 

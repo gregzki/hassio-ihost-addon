@@ -1,4 +1,4 @@
-# Zigbee2MQTT for SONOFF iHost (armv7)
+# Addons for iHost (armv7)
 
 Fork of [zigbee2mqtt/hassio-zigbee2mqtt](https://github.com/zigbee2mqtt/hassio-zigbee2mqtt) retaining **armv7** (32-bit ARM) support, dropped by upstream.
 
