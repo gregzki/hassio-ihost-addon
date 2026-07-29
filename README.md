@@ -1,8 +1,6 @@
 # Addons for iHost (armv7)
 
-Fork of [zigbee2mqtt/hassio-zigbee2mqtt](https://github.com/zigbee2mqtt/hassio-zigbee2mqtt) retaining **armv7** (32-bit ARM) support, dropped by upstream.
-
-Allows you to use your Zigbee devices **without** the vendor's bridge or gateway. See Documentation tab in HA add-on for full instructions.
+Fork of [ihost-open-source-project/hassio-ihost-addon](https://github.com/ihost-open-source-project/hassio-ihost-addon) retaining **armv7** (32-bit ARM) support, dropped by upstream. Upstream zigbee2mqtt addon source: [zigbee2mqtt/hassio-zigbee2mqtt](https://github.com/zigbee2mqtt/hassio-zigbee2mqtt).
 
 ## Installation
 
