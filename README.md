@@ -1,4 +1,4 @@
-# Addons for iHost (armv7)
+# iHost addons by GZ (armv7)
 
 Fork of [ihost-open-source-project/hassio-ihost-addon](https://github.com/ihost-open-source-project/hassio-ihost-addon) retaining **armv7** (32-bit ARM) support, dropped by upstream. Upstream zigbee2mqtt addon source: [zigbee2mqtt/hassio-zigbee2mqtt](https://github.com/zigbee2mqtt/hassio-zigbee2mqtt).
 

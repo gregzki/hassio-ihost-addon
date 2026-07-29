@@ -1,4 +1,4 @@
-# Addons for iHost (armv7)
+# iHost addons by GZ (armv7)
 
 Allows you to use your Zigbee devices **without** the vendor's bridge or gateway.
 
